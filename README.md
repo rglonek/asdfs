@@ -38,4 +38,5 @@ Final parameter in mount is the destination folder to mount to.
 * when available: use MRTs to ensure data doesn't get corrupted (so we won't need to code fsck)
   * at the moment, if a file is removed or created, and something happens in the process, we may end up with a runaway inode entry (a file that has an inode but is not referenced anywhere - essentially a forever-orphan)
   * this would be easy to cleanup as fsck, instead of using MRTs
+* support for symlinks and hardlinks (with option for delete to delete paths until no refs are there before a hardlink is removed)
 * probably a lot more, but the basic implementation already works, so I am happy; code could do with cleanup, this was a quickly hacked PoC
