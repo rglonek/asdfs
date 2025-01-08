@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"log"
 	"os"
 )
@@ -10,8 +11,37 @@ var defaultLevel = 4
 var defaultPrefix = ""
 
 type Logger struct {
-	logLevel int
-	p        string
+	logLevel      int
+	p             string
+	disableStderr bool
+	logToFile     string
+	enableKmesg   bool
+	fileLogger    *log.Logger
+	kmesg         *os.File
+}
+
+func (l *Logger) SinkDisableStderr() {
+	l.disableStderr = true
+}
+
+func (l *Logger) SinkLogToFile(name string) (err error) {
+	l.logToFile = name
+	f, err := os.OpenFile(name, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+	if err != nil {
+		return err
+	}
+	l.fileLogger = log.New(f, "", log.Default().Flags())
+	return nil
+}
+
+func (l *Logger) SinkEnableKmesg() error {
+	l.enableKmesg = true
+	kmsg, err := os.OpenFile("/dev/kmsg", os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	l.kmesg = kmsg
+	return nil
 }
 
 var defaultLogger = &Logger{
@@ -75,30 +105,62 @@ func (l *Logger) Info(format string, v ...interface{}) {
 	if l.logLevel < 4 {
 		return
 	}
-	format = "INFO " + l.p + format
-	log.Printf(format, v...)
+	format = l.p + "INFO " + format
+	if !l.disableStderr {
+		log.Printf(format, v...)
+	}
+	if l.fileLogger != nil {
+		l.fileLogger.Printf(format, v...)
+	}
+	if l.kmesg != nil {
+		fmt.Fprintf(l.kmesg, "<5>"+format+"\n", v...)
+	}
 }
 
 func (l *Logger) Warn(format string, v ...interface{}) {
 	if l.logLevel < 3 {
 		return
 	}
-	format = "WARNING " + l.p + format
-	log.Printf(format, v...)
+	format = l.p + "WARNING " + format
+	if !l.disableStderr {
+		log.Printf(format, v...)
+	}
+	if l.fileLogger != nil {
+		l.fileLogger.Printf(format, v...)
+	}
+	if l.kmesg != nil {
+		fmt.Fprintf(l.kmesg, "<4>"+format+"\n", v...)
+	}
 }
 
 func (l *Logger) Error(format string, v ...interface{}) {
 	if l.logLevel < 2 {
 		return
 	}
-	format = "ERROR " + l.p + format
-	log.Printf(format, v...)
+	format = l.p + "ERROR " + format
+	if !l.disableStderr {
+		log.Printf(format, v...)
+	}
+	if l.fileLogger != nil {
+		l.fileLogger.Printf(format, v...)
+	}
+	if l.kmesg != nil {
+		fmt.Fprintf(l.kmesg, "<3>"+format+"\n", v...)
+	}
 }
 
 func (l *Logger) Critical(format string, v ...interface{}) {
 	if l.logLevel >= 1 {
-		format = "CRITICAL " + l.p + format
-		log.Printf(format, v...)
+		format = l.p + "CRITICAL " + format
+		if !l.disableStderr {
+			log.Printf(format, v...)
+		}
+		if l.fileLogger != nil {
+			l.fileLogger.Printf(format, v...)
+		}
+		if l.kmesg != nil {
+			fmt.Fprintf(l.kmesg, "<2>"+format+"\n", v...)
+		}
 	}
 	os.Exit(1)
 }
@@ -107,14 +169,30 @@ func (l *Logger) Debug(format string, v ...interface{}) {
 	if l.logLevel < 5 {
 		return
 	}
-	format = "DEBUG " + l.p + format
-	log.Printf(format, v...)
+	format = l.p + "DEBUG " + format
+	if !l.disableStderr {
+		log.Printf(format, v...)
+	}
+	if l.fileLogger != nil {
+		l.fileLogger.Printf(format, v...)
+	}
+	if l.kmesg != nil {
+		fmt.Fprintf(l.kmesg, "<6>"+format+"\n", v...)
+	}
 }
 
 func (l *Logger) Detail(format string, v ...interface{}) {
 	if l.logLevel < 6 {
 		return
 	}
-	format = "DETAIL " + l.p + format
-	log.Printf(format, v...)
+	format = l.p + "DETAIL " + format
+	if !l.disableStderr {
+		log.Printf(format, v...)
+	}
+	if l.fileLogger != nil {
+		l.fileLogger.Printf(format, v...)
+	}
+	if l.kmesg != nil {
+		fmt.Fprintf(l.kmesg, "<7>"+format+"\n", v...)
+	}
 }

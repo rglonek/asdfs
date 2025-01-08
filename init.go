@@ -21,7 +21,12 @@ type Cfg struct {
 		RootMode uint32 `yaml:"rootMode"`
 	} `yaml:"fs"`
 	MountDir string `yaml:"mountDir"`
-	LogLevel int    `yaml:"logLevel"`
+	Log      struct {
+		Level  int    `yaml:"level"`
+		Kmesg  bool   `yaml:"kmesg"`
+		Stderr bool   `yaml:"stderr"`
+		File   string `yaml:"file"`
+	} `yaml:"log"`
 }
 
 func NewConfigFromFile(file string) (*Cfg, error) {

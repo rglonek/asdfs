@@ -15,13 +15,29 @@ func main() {
 		fmt.Printf("Usage: %s /path/to/config.yaml dest/\n", os.Args[0])
 		os.Exit(1)
 	}
-	log.Info("Mounting from %s to %s", os.Args[1], os.Args[2])
 	c, err := NewConfigFromFile(os.Args[1])
 	if err != nil {
 		log.Critical("%s", err)
 	}
 	c.MountDir = os.Args[2]
-	log.SetLogLevel(c.LogLevel)
+	log.SetLogLevel(c.Log.Level)
+	log.SetPrefix("asdfs: ")
+	if !c.Log.Stderr {
+		log.SinkDisableStderr()
+	}
+	if c.Log.File != "" {
+		err = log.SinkLogToFile(c.Log.File)
+		if err != nil {
+			log.Critical("Create File Log Sink: %s", err)
+		}
+	}
+	if c.Log.Kmesg {
+		err = log.SinkEnableKmesg()
+		if err != nil {
+			log.Critical("Kmesg Log Sink: %s", err)
+		}
+	}
+	log.Info("Mounting from %s to %s", os.Args[1], os.Args[2])
 	log.Info("Connecting to aerospike")
 	asd, err := Connect(c)
 	if err != nil {

@@ -23,7 +23,11 @@ aerospike:
   namespace: test
 fs:
   rootMode: 0o755
-logLevel: 6 # 0=NO_LOGGING 1=CRITICAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG, 6=DETAIL
+log:
+  level: 6 # 0=NO_LOGGING 1=CRITICAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG, 6=DETAIL
+  kmesg: false
+  file: ""
+  stderr: true
 ```
 
 ### Client mount:
@@ -42,8 +46,6 @@ mount -t asdfs /etc/asdfs.yaml /test
 * custom filesystem and asd timeouts, using yaml configuration
 * support symlinks
 * support hardlinks (Nlink, plus linking in `ls` in dir entries)
-* when returning with error from fuse calls, return syscall errors instead of raw messages
-* support logging to /dev/kmesg
 * inode cleanup/recycling?
 * on writes and opens, update the Atime, Ctime, Mtime
 * background the mount command instead of it running in the foreground - why are we not returning
