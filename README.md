@@ -47,4 +47,4 @@ mount -t asdfs /etc/asdfs.yaml /test
 * inode cleanup/recycling?
 * on writes and opens, update the Atime, Ctime, Mtime
 * background the mount command instead of it running in the foreground - why are we not returning
-* replace all `return err` with appropriate `syscall.E*` return codes
+* test support with vim

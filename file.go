@@ -66,12 +66,16 @@ func (f *File) Read(ctx context.Context, req *fuse.ReadRequest, resp *fuse.ReadR
 	k, err := aerospike.NewKey(f.fs.cfg.Aerospike.Namespace, "fs", int(f.inode))
 	if err != nil {
 		log.Error("Inode %d Read: %s", f.inode, err)
-		return err
+		return syscall.EFAULT
 	}
 	r, err := f.fs.asd.Get(nil, k, "data")
 	if err != nil {
+		if err.Matches(aerospike.ErrKeyNotFound.ResultCode) {
+			log.Detail("Inode %d Read: not found", f.inode)
+			return syscall.ENOENT
+		}
 		log.Error("Inode %d Read: %s", f.inode, err)
-		return err
+		return syscall.EFAULT
 	}
 	fuseutil.HandleRead(req, resp, r.Bins["data"].([]byte))
 	return nil
@@ -90,7 +94,7 @@ func (f *File) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.Wri
 	k, err := aerospike.NewKey(f.fs.cfg.Aerospike.Namespace, "fs", int(f.inode))
 	if err != nil {
 		log.Error("Inode %d Write: %s", f.inode, err)
-		return err
+		return syscall.EFAULT
 	}
 	mrt := GetPolicies(f.fs.asd)
 	binNames := []string{"Size"}
@@ -100,8 +104,12 @@ func (f *File) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.Wri
 	d, err := f.fs.asd.Get(mrt.Read(), k, binNames...)
 	if err != nil {
 		mrt.Abort()
+		if err.Matches(aerospike.ErrKeyNotFound.ResultCode) {
+			log.Detail("Inode %d Read: not found", f.inode)
+			return syscall.ENOENT
+		}
 		log.Error("Inode %d Write: %s", f.inode, err)
-		return err
+		return syscall.EFAULT
 	}
 	data := req.Data
 	dataSize := len(req.Data)
@@ -115,12 +123,12 @@ func (f *File) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.Wri
 	if err != nil {
 		mrt.Abort()
 		log.Error("Inode %d Write: %s", f.inode, err)
-		return err
+		return syscall.EFAULT
 	}
 	xerr := mrt.Commit()
 	if xerr != nil {
 		log.Error("Inode %d Write: %s", f.inode, xerr)
-		return xerr
+		return syscall.EFAULT
 	}
 	resp.Size = len(req.Data)
 	return nil
@@ -137,14 +145,14 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 	parentKey, err := aerospike.NewKey(d.fs.cfg.Aerospike.Namespace, "fs", int(d.inode))
 	if err != nil {
 		log.Error("Parent %d Create '%s': %s", d.inode, req.Name, err)
-		return nil, nil, err
+		return nil, nil, syscall.EFAULT
 	}
 	mrt := GetWritePolicy(d.fs.asd)
 	r, err := d.fs.asd.Operate(mrt.Write(), parentKey, aerospike.MapGetByKeyOp("Ls", req.Name, aerospike.MapReturnType.VALUE))
 	if err != nil {
 		mrt.Abort()
 		log.Error("Parent %d Create '%s': %s", d.inode, req.Name, err)
-		return nil, nil, err
+		return nil, nil, syscall.EFAULT
 	}
 	res := r.Bins["Ls"]
 	if res != nil {
@@ -182,14 +190,14 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 	if xerr != nil {
 		mrt.Abort()
 		log.Error("Parent %d Create '%s': %s", d.inode, req.Name, xerr)
-		return nil, nil, xerr
+		return nil, nil, syscall.EFAULT
 	}
 	// create new fs entry with new inode - our new file
 	kk, err := aerospike.NewKey(d.fs.cfg.Aerospike.Namespace, "fs", int(newNode))
 	if err != nil {
 		mrt.Abort()
 		log.Error("Parent %d Create '%s': %s", d.inode, req.Name, err)
-		return nil, nil, err
+		return nil, nil, syscall.EFAULT
 	}
 	data := []byte{}
 	bins := make(aerospike.BinMap)
@@ -211,7 +219,7 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 	if err != nil {
 		mrt.Abort()
 		log.Error("Parent %d Create '%s': %s", d.inode, req.Name, err)
-		return nil, nil, err
+		return nil, nil, syscall.EFAULT
 	}
 	// update `ls` of directory entry, indicating we have a new file there
 	mp := aerospike.NewMapPolicy(aerospike.MapOrder.KEY_ORDERED, aerospike.MapWriteMode.CREATE_ONLY)
@@ -223,13 +231,13 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 	if err != nil {
 		mrt.Abort()
 		log.Error("Parent %d Create '%s': %s", d.inode, req.Name, err)
-		return nil, nil, err
+		return nil, nil, syscall.EFAULT
 	}
 	xerr = mrt.Commit()
 	if xerr != nil {
 		mrt.Abort()
 		log.Error("Parent %d Create '%s': %s", d.inode, req.Name, xerr)
-		return nil, nil, xerr
+		return nil, nil, syscall.EFAULT
 	}
 	// return node and handle
 	nHandle := &File{
@@ -238,9 +246,4 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 		flags: req.Flags,
 	}
 	return nHandle, nHandle, nil
-}
-
-func (f *File) Close(ctx context.Context, req *fuse.ReleaseRequest) error {
-	log.Debug("Executing flose %d", f.inode)
-	return nil
 }

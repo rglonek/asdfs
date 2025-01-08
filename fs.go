@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	iofs "io/fs"
+	"syscall"
 	"time"
 
 	"bazil.org/fuse"
@@ -66,11 +67,17 @@ func (f *FS) attr(ctx context.Context, a *fuse.Attr, inode uint64) error {
 	log.Debug("Getting attr for inode %d", inode)
 	k, err := aerospike.NewKey(f.cfg.Aerospike.Namespace, "fs", int64(inode))
 	if err != nil {
-		return err
+		log.Error("attr for %d: %s", inode, err)
+		return syscall.EFAULT
 	}
 	r, err := f.asd.Get(nil, k)
 	if err != nil {
-		return err
+		if err.Matches(aerospike.ErrKeyNotFound.ResultCode) {
+			log.Detail("attr for %d: not found", inode)
+			return syscall.ENOENT
+		}
+		log.Error("attr for %d: %s", inode, err)
+		return syscall.EFAULT
 	}
 	a.Inode = inode
 	a.Atime = DBToTime(r.Bins["Atime"].(string))

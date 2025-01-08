@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"syscall"
 	"time"
 
@@ -31,14 +29,14 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 	parentKey, err := aerospike.NewKey(d.fs.cfg.Aerospike.Namespace, "fs", int(d.inode))
 	if err != nil {
 		log.Error("Parent %d Mkdir '%s': %s", d.inode, req.Name, err)
-		return nil, err
+		return nil, syscall.EFAULT
 	}
 	mrt := GetWritePolicy(d.fs.asd)
 	r, err := d.fs.asd.Operate(mrt.Write(), parentKey, aerospike.MapGetByKeyOp("Ls", req.Name, aerospike.MapReturnType.VALUE))
 	if err != nil {
 		mrt.Abort()
 		log.Error("Parent %d Mkdir '%s': %s", d.inode, req.Name, err)
-		return nil, err
+		return nil, syscall.EFAULT
 	}
 	res := r.Bins["Ls"]
 	if res != nil {
@@ -52,7 +50,7 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 	if xerr != nil {
 		mrt.Abort()
 		log.Error("Parent %d Mkdir '%s': %s", d.inode, req.Name, xerr)
-		return nil, xerr
+		return nil, syscall.EFAULT
 	}
 	// store the new inode entry - new directory
 	files := make(Ls)
@@ -75,13 +73,13 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 	kk, err := aerospike.NewKey(d.fs.cfg.Aerospike.Namespace, "fs", newNode)
 	if err != nil {
 		log.Error("Parent %d Mkdir '%s': %s", d.inode, req.Name, err)
-		return nil, err
+		return nil, syscall.EFAULT
 	}
 	err = d.fs.asd.Put(wp, kk, bins)
 	if err != nil {
 		mrt.Abort()
 		log.Error("Parent %d Mkdir '%s': %s", d.inode, req.Name, err)
-		return nil, err
+		return nil, syscall.EFAULT
 	}
 	// update the `Ls` of current dir, adding the new entry to the list
 	wp.RecordExistsAction = aerospike.UPDATE
@@ -94,13 +92,13 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 	if err != nil {
 		mrt.Abort()
 		log.Error("Parent %d Mkdir '%s': %s", d.inode, req.Name, err)
-		return nil, err
+		return nil, syscall.EFAULT
 	}
 	xerr = mrt.Commit()
 	if xerr != nil {
 		mrt.Abort()
 		log.Error("Parent %d Mkdir '%s': %s", d.inode, req.Name, xerr)
-		return nil, xerr
+		return nil, syscall.EFAULT
 	}
 	// return new dir entry
 	return &Dir{
@@ -119,7 +117,7 @@ func (d *Dir) remove(ctx context.Context, req *fuse.RemoveRequest, mrt *MRT) err
 	parentKey, err := aerospike.NewKey(d.fs.cfg.Aerospike.Namespace, "fs", int(d.inode))
 	if err != nil {
 		log.Error("Parent %d Remove '%s': %s", d.inode, req.Name, err)
-		return err
+		return syscall.EFAULT
 	}
 	// check if the requested removal is a dir, if so, check if it has items in `Ls`; if so, error dir not empty, cannot delete
 	nType, inode, err := d.lookup(ctx, req.Name, mrt.Write())
@@ -130,7 +128,7 @@ func (d *Dir) remove(ctx context.Context, req *fuse.RemoveRequest, mrt *MRT) err
 	if err != nil {
 		log.Error("Remove %s from %d: %s", req.Name, d.inode, err)
 		mrt.Abort()
-		return err
+		return syscall.EFAULT
 	}
 	if nType == fuse.DT_Dir {
 		dd := &Dir{
@@ -141,7 +139,7 @@ func (d *Dir) remove(ctx context.Context, req *fuse.RemoveRequest, mrt *MRT) err
 		if err != nil {
 			log.Error("Remove %s from %d: %s", req.Name, d.inode, err)
 			mrt.Abort()
-			return err
+			return syscall.EFAULT
 		}
 		if len(res) > 0 {
 			log.Detail("Failing to remove %s from %d: not empty", req.Name, d.inode)
@@ -154,27 +152,27 @@ func (d *Dir) remove(ctx context.Context, req *fuse.RemoveRequest, mrt *MRT) err
 	if err != nil {
 		mrt.Abort()
 		log.Error("Parent %d Remove '%s': %s", d.inode, req.Name, err)
-		return err
+		return syscall.EFAULT
 	}
 	// delete the record in question
 	kk, err := aerospike.NewKey(d.fs.cfg.Aerospike.Namespace, "fs", int(inode))
 	if err != nil {
 		log.Error("Remove %s from %d: %s", req.Name, d.inode, err)
 		mrt.Abort()
-		return err
+		return syscall.EFAULT
 	}
 	_, err = d.fs.asd.Delete(mrt.Write(), kk)
 	if err != nil {
 		log.Error("Remove %s from %d: %s", req.Name, d.inode, err)
 		mrt.Abort()
-		return err
+		return syscall.EFAULT
 	}
 	// done
 	xerr := mrt.Commit()
 	if xerr != nil {
 		mrt.Abort()
 		log.Error("Parent %d Remove '%s': %s", d.inode, req.Name, xerr)
-		return xerr
+		return syscall.EFAULT
 	}
 	return nil
 }
@@ -236,13 +234,13 @@ func (d *Dir) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fs.Nod
 	if err != nil {
 		mrt.Abort()
 		log.Detail("Rename %s->%s on %d->%d: NewKey(old): %s", req.OldName, req.NewName, d.inode, req.NewDir, err)
-		return err
+		return syscall.EFAULT
 	}
 	_, err = d.fs.asd.Operate(mrt.Write(), oldKey, aerospike.MapRemoveByKeyOp("Ls", req.OldName, aerospike.MapReturnType.NONE))
 	if err != nil {
 		mrt.Abort()
 		log.Detail("Rename %s->%s on %d->%d: Remove old entry: %s", req.OldName, req.NewName, d.inode, req.NewDir, err)
-		return err
+		return syscall.EFAULT
 	}
 	// add req.NewName to req.NewDir(Ls)
 	mp := aerospike.NewMapPolicy(aerospike.MapOrder.KEY_ORDERED, aerospike.MapWriteMode.CREATE_ONLY)
@@ -254,20 +252,20 @@ func (d *Dir) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fs.Nod
 	if err != nil {
 		mrt.Abort()
 		log.Detail("Rename %s->%s on %d->%d: NewKey(new): %s", req.OldName, req.NewName, d.inode, req.NewDir, err)
-		return err
+		return syscall.EFAULT
 	}
 	_, err = d.fs.asd.Operate(mrt.Write(), parentKey, aerospike.MapPutOp(mp, "Ls", req.NewName, lsVal.ToAerospikeMap()))
 	if err != nil {
 		mrt.Abort()
 		log.Detail("Rename %s->%s on %d->%d: Add new entry: %s", req.OldName, req.NewName, d.inode, req.NewDir, err)
-		return err
+		return syscall.EFAULT
 	}
 	// done
 	xerr := mrt.Commit()
 	if xerr != nil {
 		mrt.Abort()
-		log.Detail("Rename %s->%s on %d->%d: Commit: %s", req.OldName, req.NewName, d.inode, req.NewDir, err)
-		return xerr
+		log.Detail("Rename %s->%s on %d->%d: Commit: %s", req.OldName, req.NewName, d.inode, req.NewDir, xerr)
+		return syscall.EFAULT
 	}
 	return nil
 }
@@ -291,7 +289,7 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 			inode: inode,
 		}, nil
 	default:
-		return nil, errors.New("unsupported type")
+		return nil, syscall.ENOTSUP
 	}
 }
 
@@ -301,11 +299,12 @@ func (d *Dir) lookup(ctx context.Context, name string, wp *aerospike.WritePolicy
 	k, err := aerospike.NewKey(d.fs.cfg.Aerospike.Namespace, "fs", int(d.inode))
 	if err != nil {
 		log.Error("Lookup (%d,%s) NewKey: %s", d.inode, name, err)
-		return 0, 0, err
+		return 0, 0, syscall.EFAULT
 	}
 	r, err := d.fs.asd.Operate(wp, k, aerospike.MapGetByKeyOp("Ls", name, aerospike.MapReturnType.VALUE))
 	if err != nil {
 		log.Error("Lookup (%d,%s) Operate: %s", d.inode, name, err)
+		return 0, 0, syscall.EFAULT
 	}
 	v := r.Bins["Ls"]
 	if v == nil {
@@ -327,12 +326,15 @@ func (d *Dir) readDirAll(ctx context.Context, rp *aerospike.BasePolicy) ([]fuse.
 	k, err := aerospike.NewKey(d.fs.cfg.Aerospike.Namespace, "fs", int(d.inode))
 	if err != nil {
 		log.Error("ReadDirAll %d NewKey: %s", d.inode, err)
-		return nil, err
+		return nil, syscall.EFAULT
 	}
-	r, err := d.fs.asd.Get(rp, k, "Ls")
-	if err != nil {
-		log.Error("ReadDirAll %d Get(Ls): %s", d.inode, err)
-		return nil, fmt.Errorf("%s %s", k, err)
+	r, xerr := d.fs.asd.Get(rp, k, "Ls")
+	if xerr != nil {
+		if xerr.Matches(aerospike.ErrKeyNotFound.ResultCode) {
+			return nil, syscall.ENOENT
+		}
+		log.Error("ReadDirAll %d Get(Ls): %s", d.inode, xerr)
+		return nil, syscall.EFAULT
 	}
 	log.Detail("ReadDirAll %d: Ls:%v", d.inode, r.Bins["Ls"])
 	for n, v := range r.Bins["Ls"].(map[interface{}]interface{}) {
