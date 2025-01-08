@@ -5,7 +5,7 @@ go 1.23.4
 require (
 	bazil.org/fuse v0.0.0-20230120002735-62a210ff1fd5
 	github.com/aerospike/aerospike-client-go/v8 v8.0.0-beta.2
-	github.com/rglonek/logger v0.1.2
+	github.com/rglonek/logger v0.2.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 

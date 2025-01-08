@@ -19,8 +19,8 @@ github.com/onsi/ginkgo/v2 v2.22.0 h1:Yed107/8DjTr0lKCNt7Dn8yQ6ybuDRQoMGrNFKzMfHg
 github.com/onsi/ginkgo/v2 v2.22.0/go.mod h1:7Du3c42kxCUegi0IImZ1wUQzMBVecgIHjR1C+NkhLQo=
 github.com/onsi/gomega v1.36.1 h1:bJDPBO7ibjxcbHMgSCoo4Yj18UWbKDlLwX1x9sybDcw=
 github.com/onsi/gomega v1.36.1/go.mod h1:PvZbdDc8J6XJEpDK4HCuRBm8a6Fzp9/DmhC9C7yFlog=
-github.com/rglonek/logger v0.1.2 h1:oecDwTf/wGjg/2bJMfonw6LibP1hF6JMzOO18fOpXKM=
-github.com/rglonek/logger v0.1.2/go.mod h1:aoW8J2qZULvefdDJdM+k1q/anE4VOXoe7QA8bHwBPWk=
+github.com/rglonek/logger v0.2.0 h1:/uNMFMhdmXQCR5RAL1eYAo4eacOZLQV7tZwkmEtROTA=
+github.com/rglonek/logger v0.2.0/go.mod h1:aoW8J2qZULvefdDJdM+k1q/anE4VOXoe7QA8bHwBPWk=
 github.com/rogpeppe/go-internal v1.13.1 h1:KvO1DLK/DRN07sQ1LQKScxyZJuNnedQ5/wKSR38lUII=
 github.com/rogpeppe/go-internal v1.13.1/go.mod h1:uMEvuHeurkdAXX61udpOXGD/AzZDWNMNyH2VO9fmH0o=
 github.com/tv42/httpunix v0.0.0-20191220191345-2ba4b9c3382c h1:u6SKchux2yDvFQnDHS3lPnIRmfVJ5Sxy3ao2SIdysLQ=

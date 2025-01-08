@@ -21,7 +21,7 @@ github.com/aerospike/aerospike-client-go/v8/types/pool
 github.com/aerospike/aerospike-client-go/v8/utils/buffer
 # github.com/kr/text v0.2.0
 ## explicit
-# github.com/rglonek/logger v0.1.2
+# github.com/rglonek/logger v0.2.0
 ## explicit; go 1.18
 github.com/rglonek/logger
 # github.com/rogpeppe/go-internal v1.13.1
