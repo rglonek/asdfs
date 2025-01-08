@@ -2,7 +2,9 @@
 
 ## Prerequisites
 
-FUSE3 - `apt update && apt -y install fuse3`
+* FUSE3 - `apt update && apt -y install fuse3`
+* Aerospike version 8.0.0.0+
+* Aerospike strong consistency mode namespace
 
 ## Compile
 
@@ -12,31 +14,37 @@ go build -o /usr/sbin/mount.asdfs .
 
 ## Usage
 
-Client mount 1:
-```
-mount -t asdfs host=172.17.0.2,port=3100,ns=test,offset=1000000000 /test
+### Config file
+
+```yaml
+aerospike:
+  host: 127.0.0.1
+  port: 3000
+  namespace: test
+fs:
+  rootMode: 0o755
+logLevel: 6 # 0=NO_LOGGING 1=CRITICAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG, 6=DETAIL
 ```
 
-Client mount 2:
+### Client mount:
 ```
-mount -t asdfs host=172.17.0.2,port=3100,ns=test,offset=2000000000 /test
+mount -t asdfs /etc/asdfs.yaml /test
 ```
-
-Offset ensures that each client mount offsets new inodes (no clashes between different clients mounting the same filesystem at once).
-
-The rest of the parameters are the aerospike seed host, port and namespace.
-
-Final parameter in mount is the destination folder to mount to.
 
 ## TODO
 
-* chmod
-* chown
 * support for tls, users in aerospike connection
-* support for updating mtime, atime on files and folders
 * respect basic mount flags (rw/r, noatime, nomtime, etc)
-* when available: use MRTs to ensure data doesn't get corrupted (so we won't need to code fsck)
-  * at the moment, if a file is removed or created, and something happens in the process, we may end up with a runaway inode entry (a file that has an inode but is not referenced anywhere - essentially a forever-orphan)
-  * this would be easy to cleanup as fsck, instead of using MRTs
-* support for symlinks and hardlinks (with option for delete to delete paths until no refs are there before a hardlink is removed)
-* probably a lot more, but the basic implementation already works, so I am happy; code could do with cleanup, this was a quickly hacked PoC
+* enable MRTs in asd.go: var MRTEnabled = true
+* setAttr, uid, gid
+* multi-asd-record file storage - to allow for files larger than 8MiB
+* multi-asd-record dir Ls storage - to allow more files per directory
+* custom filesystem and asd timeouts, using yaml configuration
+* support symlinks
+* support hardlinks (Nlink, plus linking in `ls` in dir entries)
+* when returning with error from fuse calls, return syscall errors instead of raw messages
+* support logging to /dev/kmesg
+* inode cleanup/recycling?
+* on writes and opens, update the Atime, Ctime, Mtime
+* background the mount command instead of it running in the foreground - why are we not returning
+* replace all `return err` with appropriate `syscall.E*` return codes

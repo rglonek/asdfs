@@ -1,0 +1,44 @@
+# bazil.org/fuse v0.0.0-20230120002735-62a210ff1fd5
+## explicit; go 1.19
+bazil.org/fuse
+bazil.org/fuse/fs
+bazil.org/fuse/fuseutil
+# github.com/aerospike/aerospike-client-go/v8 v8.0.0-beta.2
+## explicit; go 1.23
+github.com/aerospike/aerospike-client-go/v8
+github.com/aerospike/aerospike-client-go/v8/internal/atomic
+github.com/aerospike/aerospike-client-go/v8/internal/atomic/map
+github.com/aerospike/aerospike-client-go/v8/internal/lua
+github.com/aerospike/aerospike-client-go/v8/internal/lua/resources
+github.com/aerospike/aerospike-client-go/v8/internal/seq
+github.com/aerospike/aerospike-client-go/v8/logger
+github.com/aerospike/aerospike-client-go/v8/pkg/bcrypt
+github.com/aerospike/aerospike-client-go/v8/pkg/ripemd160
+github.com/aerospike/aerospike-client-go/v8/types
+github.com/aerospike/aerospike-client-go/v8/types/histogram
+github.com/aerospike/aerospike-client-go/v8/types/particle_type
+github.com/aerospike/aerospike-client-go/v8/types/pool
+github.com/aerospike/aerospike-client-go/v8/utils/buffer
+# github.com/kr/text v0.2.0
+## explicit
+# github.com/rglonek/logger v0.1.2
+## explicit; go 1.18
+github.com/rglonek/logger
+# github.com/rogpeppe/go-internal v1.13.1
+## explicit; go 1.22
+# github.com/yuin/gopher-lua v1.1.1
+## explicit; go 1.17
+github.com/yuin/gopher-lua
+github.com/yuin/gopher-lua/ast
+github.com/yuin/gopher-lua/parse
+github.com/yuin/gopher-lua/pm
+# golang.org/x/sync v0.10.0
+## explicit; go 1.18
+golang.org/x/sync/errgroup
+golang.org/x/sync/semaphore
+# golang.org/x/sys v0.29.0
+## explicit; go 1.18
+golang.org/x/sys/unix
+# gopkg.in/yaml.v3 v3.0.1
+## explicit
+gopkg.in/yaml.v3
