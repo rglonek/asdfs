@@ -28,6 +28,15 @@ log:
   kmesg: false
   file: ""
   stderr: true
+auth:
+  username: ""
+  password: ""
+  mode: "" # external / internal / pki
+tls:
+  caFile: ""
+  certFile: ""
+  keyFile: ""
+  tlsName: ""
 ```
 
 ### Client mount:
@@ -37,7 +46,6 @@ mount -t asdfs /etc/asdfs.yaml /test
 
 ## TODO
 
-* support for tls, users in aerospike connection
 * respect basic mount flags (rw/r, noatime, nomtime, etc)
 * enable MRTs in asd.go: var MRTEnabled = true
 * setAttr, uid, gid

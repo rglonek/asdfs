@@ -1,10 +1,14 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"fmt"
 	"io"
 	iofs "io/fs"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aerospike/aerospike-client-go/v8"
@@ -16,6 +20,17 @@ type Cfg struct {
 		Host      string `yaml:"host"`
 		Port      int    `yaml:"port"`
 		Namespace string `yaml:"namespace"`
+		Auth      struct {
+			Username string `yaml:"username"`
+			Password string `yaml:"password"`
+			Mode     string `yaml:"mode"`
+		} `yaml:"auth"`
+		TLS struct {
+			CAFile   string `yaml:"caFile"`
+			CertFile string `yaml:"certFile"`
+			KeyFile  string `yaml:"keyFile"`
+			TlsName  string `yaml:"tlsName"`
+		} `yaml:"tls"`
 	} `yaml:"aerospike"`
 	FS struct {
 		RootMode uint32 `yaml:"rootMode"`
@@ -48,9 +63,53 @@ func NewConfig(conf io.Reader) (*Cfg, error) {
 	return config, err
 }
 
+// build TLS configuration
+func buildTLSConfig(tlsName string, caFile string, certFile string, keyFile string) (*tls.Config, error) {
+	nTLS := new(tls.Config)
+	nTLS.InsecureSkipVerify = true
+	nTLS.ServerName = tlsName
+	caCert, err := os.ReadFile(caFile)
+	if err != nil {
+		return nil, fmt.Errorf("tls: loadca: %s", err)
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+	nTLS.RootCAs = caCertPool
+	if certFile != "" && keyFile != "" {
+		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+		if err != nil {
+			return nil, fmt.Errorf("tls: loadkeys: %s", err)
+		}
+		nTLS.Certificates = []tls.Certificate{cert}
+	}
+	return nTLS, nil
+}
+
 func Connect(c *Cfg) (*aerospike.Client, error) {
 	// we can add policy items for timeout, retries, creation of sindexes, etc, everything init goes here
-	asd, err := aerospike.NewClient(c.Aerospike.Host, c.Aerospike.Port)
+	cp := aerospike.NewClientPolicy()
+	if c.Aerospike.Auth.Username != "" {
+		cp.User = c.Aerospike.Auth.Username
+		cp.Password = c.Aerospike.Auth.Password
+		switch strings.ToUpper(c.Aerospike.Auth.Mode) {
+		case "EXTERNAL":
+			cp.AuthMode = aerospike.AuthModeExternal
+		case "PKI":
+			cp.AuthMode = aerospike.AuthModePKI
+		case "INTERNAL", "":
+			cp.AuthMode = aerospike.AuthModeInternal
+		default:
+			return nil, errors.New("auth mode not supported")
+		}
+	}
+	if c.Aerospike.TLS.CAFile != "" {
+		tlsConfig, err := buildTLSConfig(c.Aerospike.TLS.TlsName, c.Aerospike.TLS.CAFile, c.Aerospike.TLS.CertFile, c.Aerospike.TLS.KeyFile)
+		if err != nil {
+			return nil, err
+		}
+		cp.TlsConfig = tlsConfig
+	}
+	asd, err := aerospike.NewClientWithPolicy(cp, c.Aerospike.Host, c.Aerospike.Port)
 	if err != nil {
 		return nil, err
 	}
