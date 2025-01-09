@@ -27,6 +27,15 @@ func (f *File) truncate(mrt *MRT) error {
 	return nil
 }
 
+func (f *File) Setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse.SetattrResponse) error {
+	err := f.fs.setattr(ctx, req, resp, f.inode)
+	if err != nil {
+		log.Error("Inode %d SetAttr: %s", f.inode, err)
+		return err
+	}
+	return nil
+}
+
 func (f *File) Attr(ctx context.Context, a *fuse.Attr) error {
 	err := f.fs.attr(ctx, a, f.inode)
 	if err != nil {

@@ -19,6 +19,15 @@ func (d *Dir) Attr(ctx context.Context, a *fuse.Attr) error {
 	return nil
 }
 
+func (d *Dir) Setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse.SetattrResponse) error {
+	err := d.fs.setattr(ctx, req, resp, d.inode)
+	if err != nil {
+		log.Error("Inode %d SetAttr: %s", d.inode, err)
+		return err
+	}
+	return nil
+}
+
 func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error) {
 	if d.fs.cfg.MountParams.RO {
 		return nil, syscall.EROFS

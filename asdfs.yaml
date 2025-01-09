@@ -6,6 +6,6 @@ fs:
   rootMode: 0o755
 log:
   level: 6 # 0=NO_LOGGING 1=CRITICAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG, 6=DETAIL
-  kmesg: true
+  kmesg: false
   file: /var/log/asdfs.log
-  stderr: false
+  stderr: true

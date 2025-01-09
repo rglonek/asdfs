@@ -70,7 +70,7 @@ func (f *FS) attr(ctx context.Context, a *fuse.Attr, inode uint64) error {
 		log.Error("attr for %d: %s", inode, err)
 		return syscall.EFAULT
 	}
-	r, err := f.asd.Get(nil, k)
+	r, err := f.asd.Get(nil, k, "Atime", "BlockSize", "Blocks", "Ctime", "Flags", "Gid", "Mode", "Mtime", "Nlink", "Rdev", "Size", "Uid")
 	if err != nil {
 		if err.Matches(aerospike.ErrKeyNotFound.ResultCode) {
 			log.Detail("attr for %d: not found", inode)
@@ -93,6 +93,76 @@ func (f *FS) attr(ctx context.Context, a *fuse.Attr, inode uint64) error {
 	a.Size = uint64(r.Bins["Size"].(int))
 	a.Uid = uint32(r.Bins["Uid"].(int))
 	a.Valid = 1
+	return nil
+}
+
+func (f *FS) setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse.SetattrResponse, inode uint64) error {
+	if f.cfg.MountParams.RO {
+		return syscall.EROFS
+	}
+	log.Debug("Setattr on %d", inode)
+	bins := make(aerospike.BinMap)
+
+	key, err := aerospike.NewKey(f.cfg.Aerospike.Namespace, "fs", int(inode))
+	if err != nil {
+		log.Error("Setattr %d: %s", inode, err)
+		return syscall.EFAULT
+	}
+	mrt := GetWritePolicy(f.asd)
+
+	// here a heavy op: truncate data
+	if req.Valid.Size() {
+		r, err := f.asd.Get(mrt.Read(), key, "data", "Size")
+		if err != nil {
+			mrt.Abort()
+			log.Error("Setattr %d: %s", inode, err)
+			return syscall.EFAULT
+		}
+		size := r.Bins["Size"].(int)
+		data := r.Bins["data"].([]byte)
+		if size > int(req.Size) {
+			data = data[:req.Size]
+		}
+		if size < int(req.Size) {
+			extended := make([]byte, req.Size)
+			copy(extended, data)
+			data = extended
+		}
+		bins["Size"] = int(req.Size)
+		bins["data"] = data
+	}
+
+	// normal ops
+	if req.Valid.Mode() {
+		bins["Mode"] = int(req.Mode)
+	}
+	if req.Valid.Uid() {
+		bins["Uid"] = int(req.Uid)
+	}
+	if req.Valid.Gid() {
+		bins["Gid"] = int(req.Gid)
+	}
+	bins["Ctime"] = TimeToDB(time.Now())
+	if req.Valid.Atime() {
+		bins["Atime"] = TimeToDB(req.Atime)
+	}
+	if req.Valid.Mtime() {
+		bins["Mtime"] = TimeToDB(req.Mtime)
+	}
+	err = f.asd.Put(mrt.Write(), key, bins)
+	if err != nil {
+		mrt.Abort()
+		log.Error("Setattr %d: %s", inode, err)
+		return syscall.EFAULT
+	}
+
+	// done
+	xerr := mrt.Commit()
+	if xerr != nil {
+		mrt.Abort()
+		log.Error("Setattr %d: %s", inode, xerr)
+		return syscall.EFAULT
+	}
 	return nil
 }
 

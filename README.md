@@ -46,7 +46,6 @@ mount -t asdfs /etc/asdfs.yaml /test
 
 ## TODO
 
-* setAttr, uid, gid
 * custom filesystem and asd timeouts, using yaml configuration
 * test support with vim
 
