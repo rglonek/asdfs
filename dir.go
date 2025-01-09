@@ -20,6 +20,9 @@ func (d *Dir) Attr(ctx context.Context, a *fuse.Attr) error {
 }
 
 func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error) {
+	if d.fs.cfg.MountParams.RO {
+		return nil, syscall.EROFS
+	}
 	log.Debug("Executing Mkdir")
 	// check `Ls` to ensure the new entry doesn't already exist
 	if err := d.fs.fuse.InvalidateNodeData(d); err != nil && err != fuse.ErrNotCached {
@@ -88,7 +91,7 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 		Inode: uint64(newNode),
 		Type:  fuse.DT_Dir,
 	}
-	_, err = d.fs.asd.Operate(mrt.Write(), parentKey, aerospike.MapPutOp(mp, "Ls", req.Name, lsVal.ToAerospikeMap()))
+	_, err = d.fs.asd.Operate(mrt.Write(), parentKey, aerospike.MapPutOp(mp, "Ls", req.Name, lsVal.ToAerospikeMap()), aerospike.PutOp(aerospike.NewBin("Mtime", TimeToDB(time.Now()))), aerospike.PutOp(aerospike.NewBin("Atime", TimeToDB(time.Now()))))
 	if err != nil {
 		mrt.Abort()
 		log.Error("Parent %d Mkdir '%s': %s", d.inode, req.Name, err)
@@ -108,6 +111,9 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 }
 
 func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
+	if d.fs.cfg.MountParams.RO {
+		return syscall.EROFS
+	}
 	mrt := GetPolicies(d.fs.asd)
 	return d.remove(ctx, req, mrt)
 }
@@ -148,7 +154,7 @@ func (d *Dir) remove(ctx context.Context, req *fuse.RemoveRequest, mrt *MRT) err
 		}
 	}
 	// update the `Ls` entry, removing the requested file/dir
-	_, err = d.fs.asd.Operate(mrt.Write(), parentKey, aerospike.MapRemoveByKeyOp("Ls", req.Name, aerospike.MapReturnType.NONE))
+	_, err = d.fs.asd.Operate(mrt.Write(), parentKey, aerospike.MapRemoveByKeyOp("Ls", req.Name, aerospike.MapReturnType.NONE), aerospike.PutOp(aerospike.NewBin("Mtime", TimeToDB(time.Now()))), aerospike.PutOp(aerospike.NewBin("Atime", TimeToDB(time.Now()))))
 	if err != nil {
 		mrt.Abort()
 		log.Error("Parent %d Remove '%s': %s", d.inode, req.Name, err)
@@ -186,6 +192,9 @@ func (d *Dir) remove(ctx context.Context, req *fuse.RemoveRequest, mrt *MRT) err
 // from d.inode(Ls) remove req.OldName
 // add req.NewName to req.NewDir(Ls)
 func (d *Dir) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fs.Node) error {
+	if d.fs.cfg.MountParams.RO {
+		return syscall.EROFS
+	}
 	log.Debug("Executing Rename %s->%s on %d->%d", req.OldName, req.NewName, d.inode, req.NewDir)
 	mrt := GetPolicies(d.fs.asd)
 	// lookup Old
@@ -236,7 +245,7 @@ func (d *Dir) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fs.Nod
 		log.Detail("Rename %s->%s on %d->%d: NewKey(old): %s", req.OldName, req.NewName, d.inode, req.NewDir, err)
 		return syscall.EFAULT
 	}
-	_, err = d.fs.asd.Operate(mrt.Write(), oldKey, aerospike.MapRemoveByKeyOp("Ls", req.OldName, aerospike.MapReturnType.NONE))
+	_, err = d.fs.asd.Operate(mrt.Write(), oldKey, aerospike.MapRemoveByKeyOp("Ls", req.OldName, aerospike.MapReturnType.NONE), aerospike.PutOp(aerospike.NewBin("Mtime", TimeToDB(time.Now()))), aerospike.PutOp(aerospike.NewBin("Atime", TimeToDB(time.Now()))))
 	if err != nil {
 		mrt.Abort()
 		log.Detail("Rename %s->%s on %d->%d: Remove old entry: %s", req.OldName, req.NewName, d.inode, req.NewDir, err)
@@ -254,7 +263,7 @@ func (d *Dir) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fs.Nod
 		log.Detail("Rename %s->%s on %d->%d: NewKey(new): %s", req.OldName, req.NewName, d.inode, req.NewDir, err)
 		return syscall.EFAULT
 	}
-	_, err = d.fs.asd.Operate(mrt.Write(), parentKey, aerospike.MapPutOp(mp, "Ls", req.NewName, lsVal.ToAerospikeMap()))
+	_, err = d.fs.asd.Operate(mrt.Write(), parentKey, aerospike.MapPutOp(mp, "Ls", req.NewName, lsVal.ToAerospikeMap()), aerospike.PutOp(aerospike.NewBin("Mtime", TimeToDB(time.Now()))), aerospike.PutOp(aerospike.NewBin("Atime", TimeToDB(time.Now()))))
 	if err != nil {
 		mrt.Abort()
 		log.Detail("Rename %s->%s on %d->%d: Add new entry: %s", req.OldName, req.NewName, d.inode, req.NewDir, err)

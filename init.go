@@ -42,6 +42,10 @@ type Cfg struct {
 		Stderr bool   `yaml:"stderr"`
 		File   string `yaml:"file"`
 	} `yaml:"log"`
+	MountParams struct {
+		RW bool
+		RO bool
+	}
 }
 
 func NewConfigFromFile(file string) (*Cfg, error) {

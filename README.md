@@ -46,15 +46,12 @@ mount -t asdfs /etc/asdfs.yaml /test
 
 ## TODO
 
-* respect basic mount flags (rw/r, noatime, nomtime, etc)
-* enable MRTs in asd.go: var MRTEnabled = true
 * setAttr, uid, gid
-* multi-asd-record file storage - to allow for files larger than 8MiB
-* multi-asd-record dir Ls storage - to allow more files per directory
 * custom filesystem and asd timeouts, using yaml configuration
+* test support with vim
+
+* multi-asd-record file storage - to allow for files larger than 8MiB
 * support symlinks
 * support hardlinks (Nlink, plus linking in `ls` in dir entries)
-* inode cleanup/recycling?
-* on writes and opens, update the Atime, Ctime, Mtime
 * background the mount command instead of it running in the foreground - why are we not returning
-* test support with vim
+* enable MRTs in asd.go: var MRTEnabled = true

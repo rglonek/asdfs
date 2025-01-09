@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/rglonek/logger"
 )
@@ -20,6 +21,24 @@ func main() {
 		log.Critical("%s", err)
 	}
 	c.MountDir = os.Args[2]
+
+	log.Info("%v", os.Args)
+	if len(os.Args) >= 5 {
+		if os.Args[3] != "-o" {
+			log.Critical("Invalid argument (%v)", os.Args)
+		}
+		for _, param := range strings.Split(strings.ToLower(os.Args[3]), ",") {
+			switch param {
+			case "rw":
+				c.MountParams.RW = true
+				c.MountParams.RO = false
+			case "ro":
+				c.MountParams.RW = false
+				c.MountParams.RO = true
+			}
+		}
+	}
+
 	log.SetLogLevel(c.Log.Level)
 	log.SetPrefix("asdfs: ")
 	if !c.Log.Stderr {

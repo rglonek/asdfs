@@ -12,12 +12,15 @@ import (
 )
 
 func (f *File) truncate(mrt *MRT) error {
+	if f.fs.cfg.MountParams.RO {
+		return syscall.EROFS
+	}
 	log.Detail("Truncating %d on request from flags", f.inode)
 	k, err := aerospike.NewKey(f.fs.cfg.Aerospike.Namespace, "fs", int(f.inode))
 	if err != nil {
 		return err
 	}
-	err = f.fs.asd.PutBins(mrt.Write(), k, aerospike.NewBin("data", []byte{}), aerospike.NewBin("Size", 0))
+	err = f.fs.asd.PutBins(mrt.Write(), k, aerospike.NewBin("data", []byte{}), aerospike.NewBin("Size", 0), aerospike.NewBin("Mtime", TimeToDB(time.Now())), aerospike.NewBin("Atime", TimeToDB(time.Now())))
 	if err != nil {
 		return err
 	}
@@ -82,6 +85,9 @@ func (f *File) Read(ctx context.Context, req *fuse.ReadRequest, resp *fuse.ReadR
 }
 
 func (f *File) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.WriteResponse) error {
+	if f.fs.cfg.MountParams.RO {
+		return syscall.EROFS
+	}
 	log.Debug("Executing Write %d", f.inode)
 	if f.flags == 0 {
 		log.Error("Write %d: not a handle", f.inode)
@@ -119,7 +125,7 @@ func (f *File) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.Wri
 		data = append(d.Bins["data"].([]byte), data...)
 	}
 	// store
-	err = f.fs.asd.PutBins(mrt.Write(), k, aerospike.NewBin("data", data), aerospike.NewBin("Size", dataSize))
+	err = f.fs.asd.PutBins(mrt.Write(), k, aerospike.NewBin("data", data), aerospike.NewBin("Size", dataSize), aerospike.NewBin("Mtime", TimeToDB(time.Now())), aerospike.NewBin("Atime", TimeToDB(time.Now())))
 	if err != nil {
 		mrt.Abort()
 		log.Error("Inode %d Write: %s", f.inode, err)
@@ -135,6 +141,9 @@ func (f *File) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.Wri
 }
 
 func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.CreateResponse) (fs.Node, fs.Handle, error) {
+	if d.fs.cfg.MountParams.RO {
+		return nil, nil, syscall.EROFS
+	}
 	log.Debug("Executing Create '%s' in %d", req.Name, d.inode)
 	// clear cache
 	resp.Flags = fuse.OpenDirectIO
@@ -227,7 +236,7 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 		Inode: uint64(newNode),
 		Type:  fuse.DT_File,
 	}
-	_, err = d.fs.asd.Operate(mrt.Write(), parentKey, aerospike.MapPutOp(mp, "Ls", req.Name, lsVal.ToAerospikeMap()))
+	_, err = d.fs.asd.Operate(mrt.Write(), parentKey, aerospike.MapPutOp(mp, "Ls", req.Name, lsVal.ToAerospikeMap()), aerospike.PutOp(aerospike.NewBin("Mtime", TimeToDB(time.Now()))), aerospike.PutOp(aerospike.NewBin("Atime", TimeToDB(time.Now()))))
 	if err != nil {
 		mrt.Abort()
 		log.Error("Parent %d Create '%s': %s", d.inode, req.Name, err)
