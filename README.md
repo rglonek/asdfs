@@ -47,8 +47,6 @@ mount -t asdfs /etc/asdfs.yaml /test
 ## TODO
 
 * custom filesystem and asd timeouts, using yaml configuration
-* test support with vim
-
 * multi-asd-record file storage - to allow for files larger than 8MiB
 * support symlinks
 * support hardlinks (Nlink, plus linking in `ls` in dir entries)

@@ -265,3 +265,11 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 	}
 	return nHandle, nHandle, nil
 }
+
+func (f *File) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
+	log.Debug("Fsync called on %d, invalidating cache", f.inode)
+	if err := f.fs.fuse.InvalidateNodeData(f); err != nil && err != fuse.ErrNotCached {
+		log.Warn("invalidate error: %v", err)
+	}
+	return nil
+}
