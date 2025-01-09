@@ -62,8 +62,20 @@ mount -t asdfs /etc/asdfs.yaml /test
 
 ## TODO
 
-* multi-asd-record file storage - to allow for files larger than 8MiB
 * support symlinks
 * support hardlinks (Nlink, plus linking in `ls` in dir entries)
 * background the mount command instead of it running in the foreground - why are we not returning
+* handle graceful exit via umount, sigterm, sigint
 * enable MRTs in asd.go: var MRTEnabled = true
+
+## Wishlist
+
+* multi-asd-record file storage - to allow for files larger than 8MiB
+  * PK=(string)=inode_blockNo
+  * will affect truncate
+  * will affecrt truncate(stat)
+  * will affect file read
+  * will affect file write
+  * will affect remove
+  * store no more than 7MiB per block, leaving 1MiB for other bins, metadata, overheads, expansion, etc
+  * implement menthods for partial reads (offset reads)
