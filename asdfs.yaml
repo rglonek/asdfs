@@ -2,10 +2,12 @@ aerospike:
   host: 127.0.0.1
   port: 3000
   namespace: test
-fs:
-  rootMode: 0o755
+  timeouts:
+    total: 120s
+    socket: 30s
+    mrt: 120s
+    connect: 60s
+    login: 60s
 log:
-  level: 6 # 0=NO_LOGGING 1=CRITICAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG, 6=DETAIL
-  kmesg: false
-  file: /var/log/asdfs.log
+  level: 6 # -1=NO_LOGGING 1=CRITICAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG, 6=DETAIL
   stderr: true

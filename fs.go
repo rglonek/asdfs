@@ -70,7 +70,7 @@ func (f *FS) attr(ctx context.Context, a *fuse.Attr, inode uint64) error {
 		log.Error("attr for %d: %s", inode, err)
 		return syscall.EFAULT
 	}
-	r, err := f.asd.Get(nil, k, "Atime", "BlockSize", "Blocks", "Ctime", "Flags", "Gid", "Mode", "Mtime", "Nlink", "Rdev", "Size", "Uid")
+	r, err := f.asd.Get(GetReadPolicyNoMRT(f.asd, &f.cfg.Aerospike.Timeouts), k, "Atime", "BlockSize", "Blocks", "Ctime", "Flags", "Gid", "Mode", "Mtime", "Nlink", "Rdev", "Size", "Uid")
 	if err != nil {
 		if err.Matches(aerospike.ErrKeyNotFound.ResultCode) {
 			log.Detail("attr for %d: not found", inode)
@@ -108,7 +108,7 @@ func (f *FS) setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse.S
 		log.Error("Setattr %d: %s", inode, err)
 		return syscall.EFAULT
 	}
-	mrt := GetWritePolicy(f.asd)
+	mrt := GetWritePolicy(f.asd, &f.cfg.Aerospike.Timeouts)
 
 	// here a heavy op: truncate data
 	if req.Valid.Size() {

@@ -43,7 +43,7 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 		log.Error("Parent %d Mkdir '%s': %s", d.inode, req.Name, err)
 		return nil, syscall.EFAULT
 	}
-	mrt := GetWritePolicy(d.fs.asd)
+	mrt := GetWritePolicy(d.fs.asd, &d.fs.cfg.Aerospike.Timeouts)
 	r, err := d.fs.asd.Operate(mrt.Write(), parentKey, aerospike.MapGetByKeyOp("Ls", req.Name, aerospike.MapReturnType.VALUE))
 	if err != nil {
 		mrt.Abort()
@@ -123,7 +123,7 @@ func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 	if d.fs.cfg.MountParams.RO {
 		return syscall.EROFS
 	}
-	mrt := GetPolicies(d.fs.asd)
+	mrt := GetPolicies(d.fs.asd, &d.fs.cfg.Aerospike.Timeouts)
 	return d.remove(ctx, req, mrt)
 }
 func (d *Dir) remove(ctx context.Context, req *fuse.RemoveRequest, mrt *MRT) error {
@@ -205,7 +205,7 @@ func (d *Dir) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fs.Nod
 		return syscall.EROFS
 	}
 	log.Debug("Executing Rename %s->%s on %d->%d", req.OldName, req.NewName, d.inode, req.NewDir)
-	mrt := GetPolicies(d.fs.asd)
+	mrt := GetPolicies(d.fs.asd, &d.fs.cfg.Aerospike.Timeouts)
 	// lookup Old
 	otype, oinode, err := d.lookup(ctx, req.OldName, mrt.Write())
 	if err != nil {
@@ -289,7 +289,7 @@ func (d *Dir) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fs.Nod
 }
 
 func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
-	nType, inode, err := d.lookup(ctx, name, nil)
+	nType, inode, err := d.lookup(ctx, name, GetWritePolicyNoMRT(d.fs.asd, &d.fs.cfg.Aerospike.Timeouts))
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +333,7 @@ func (d *Dir) lookup(ctx context.Context, name string, wp *aerospike.WritePolicy
 }
 
 func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
-	return d.readDirAll(ctx, nil)
+	return d.readDirAll(ctx, GetReadPolicyNoMRT(d.fs.asd, &d.fs.cfg.Aerospike.Timeouts))
 }
 
 func (d *Dir) readDirAll(ctx context.Context, rp *aerospike.BasePolicy) ([]fuse.Dirent, error) {

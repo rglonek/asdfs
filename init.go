@@ -31,6 +31,7 @@ type Cfg struct {
 			KeyFile  string `yaml:"keyFile"`
 			TlsName  string `yaml:"tlsName"`
 		} `yaml:"tls"`
+		Timeouts cfgTimeout `yaml:"timeouts"`
 	} `yaml:"aerospike"`
 	FS struct {
 		RootMode uint32 `yaml:"rootMode"`
@@ -43,9 +44,17 @@ type Cfg struct {
 		File   string `yaml:"file"`
 	} `yaml:"log"`
 	MountParams struct {
-		RW bool
-		RO bool
-	}
+		RW bool `yaml:"rw"`
+		RO bool `yaml:"ro"`
+	} `yaml:"mountParams"`
+}
+
+type cfgTimeout struct {
+	Total   time.Duration `yaml:"total"`
+	Socket  time.Duration `yaml:"socket"`
+	MRT     time.Duration `yaml:"mrt"`
+	Connect time.Duration `yaml:"connect"`
+	Login   time.Duration `yaml:"login"`
 }
 
 func NewConfigFromFile(file string) (*Cfg, error) {
@@ -64,7 +73,36 @@ func NewConfig(conf io.Reader) (*Cfg, error) {
 	config := &Cfg{}
 	dec := yaml.NewDecoder(conf)
 	err := dec.Decode(config)
-	return config, err
+	if err != nil {
+		return nil, err
+	}
+	if config.Aerospike.Timeouts.Socket == 0 {
+		config.Aerospike.Timeouts.Socket = 30 * time.Second
+	}
+	if config.Aerospike.Timeouts.Total == 0 {
+		config.Aerospike.Timeouts.Total = 120 * time.Second
+	}
+	if config.Aerospike.Timeouts.MRT == 0 {
+		config.Aerospike.Timeouts.MRT = 120 * time.Second
+	}
+	if config.Aerospike.Timeouts.Connect == 0 {
+		config.Aerospike.Timeouts.Connect = 60 * time.Second
+	}
+	if config.Aerospike.Timeouts.Login == 0 {
+		config.Aerospike.Timeouts.Login = 60 * time.Second
+	}
+	if config.FS.RootMode == 0 {
+		config.FS.RootMode = 0o755
+	}
+	if config.Log.Level == 0 {
+		config.Log.Level = 3
+	} else if config.Log.Level == -1 {
+		config.Log.Level = 0
+	}
+	if !config.Log.Kmesg && !config.Log.Stderr && !config.Log.Stderr {
+		config.Log.Kmesg = true
+	}
+	return config, nil
 }
 
 // build TLS configuration
@@ -92,6 +130,8 @@ func buildTLSConfig(tlsName string, caFile string, certFile string, keyFile stri
 func Connect(c *Cfg) (*aerospike.Client, error) {
 	// we can add policy items for timeout, retries, creation of sindexes, etc, everything init goes here
 	cp := aerospike.NewClientPolicy()
+	cp.Timeout = c.Aerospike.Timeouts.Connect
+	cp.LoginTimeout = c.Aerospike.Timeouts.Login
 	if c.Aerospike.Auth.Username != "" {
 		cp.User = c.Aerospike.Auth.Username
 		cp.Password = c.Aerospike.Auth.Password
@@ -123,7 +163,7 @@ func Connect(c *Cfg) (*aerospike.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	mrt := GetPolicies(asd)
+	mrt := GetPolicies(asd, &c.Aerospike.Timeouts)
 	exists, err := asd.Exists(mrt.Read(), kk)
 	if err != nil {
 		mrt.Abort()

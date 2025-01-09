@@ -14,39 +14,54 @@ go build -o /usr/sbin/mount.asdfs .
 
 ## Usage
 
-### Config file
+### Minimal Config file
 
 ```yaml
 aerospike:
   host: 127.0.0.1
   port: 3000
   namespace: test
+```
+
+### Full Config file
+
+```yaml
+aerospike:
+  host: 127.0.0.1
+  port: 3000
+  namespace: test
+  timeouts:
+    total: 120s
+    socket: 30s
+    mrt: 120s
+    connect: 60s
+    login: 60s
+  auth:
+    username: ""
+    password: ""
+    mode: "" # external / internal / pki
+  tls:
+    caFile: ""
+    certFile: ""
+    keyFile: ""
+    tlsName: ""
 fs:
   rootMode: 0o755
 log:
-  level: 6 # 0=NO_LOGGING 1=CRITICAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG, 6=DETAIL
+  level: 6 # -1=NO_LOGGING 1=CRITICAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG, 6=DETAIL
   kmesg: false
   file: ""
   stderr: true
-auth:
-  username: ""
-  password: ""
-  mode: "" # external / internal / pki
-tls:
-  caFile: ""
-  certFile: ""
-  keyFile: ""
-  tlsName: ""
 ```
 
 ### Client mount:
+
 ```
 mount -t asdfs /etc/asdfs.yaml /test
 ```
 
 ## TODO
 
-* custom filesystem and asd timeouts, using yaml configuration
 * multi-asd-record file storage - to allow for files larger than 8MiB
 * support symlinks
 * support hardlinks (Nlink, plus linking in `ls` in dir entries)

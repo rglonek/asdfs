@@ -40,7 +40,7 @@ func main() {
 	}
 
 	log.SetLogLevel(c.Log.Level)
-	log.SetPrefix("asdfs: ")
+	log.SetPrefix("asd-fs: ")
 	if !c.Log.Stderr {
 		log.SinkDisableStderr()
 	}

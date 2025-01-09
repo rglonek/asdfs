@@ -57,7 +57,7 @@ func (f *File) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenR
 		flags: req.Flags,
 	}
 	if req.Flags&fuse.OpenTruncate != 0 {
-		mrt := GetWritePolicy(f.fs.asd)
+		mrt := GetWritePolicy(f.fs.asd, &f.fs.cfg.Aerospike.Timeouts)
 		err := nHandle.truncate(mrt)
 		if err != nil {
 			mrt.Abort()
@@ -80,7 +80,7 @@ func (f *File) Read(ctx context.Context, req *fuse.ReadRequest, resp *fuse.ReadR
 		log.Error("Inode %d Read: %s", f.inode, err)
 		return syscall.EFAULT
 	}
-	r, err := f.fs.asd.Get(nil, k, "data")
+	r, err := f.fs.asd.Get(GetReadPolicyNoMRT(f.fs.asd, &f.fs.cfg.Aerospike.Timeouts), k, "data")
 	if err != nil {
 		if err.Matches(aerospike.ErrKeyNotFound.ResultCode) {
 			log.Detail("Inode %d Read: not found", f.inode)
@@ -111,7 +111,7 @@ func (f *File) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.Wri
 		log.Error("Inode %d Write: %s", f.inode, err)
 		return syscall.EFAULT
 	}
-	mrt := GetPolicies(f.fs.asd)
+	mrt := GetPolicies(f.fs.asd, &f.fs.cfg.Aerospike.Timeouts)
 	binNames := []string{"Size"}
 	if f.flags&fuse.OpenAppend != 0 {
 		binNames = append(binNames, "data")
@@ -165,7 +165,7 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 		log.Error("Parent %d Create '%s': %s", d.inode, req.Name, err)
 		return nil, nil, syscall.EFAULT
 	}
-	mrt := GetWritePolicy(d.fs.asd)
+	mrt := GetWritePolicy(d.fs.asd, &d.fs.cfg.Aerospike.Timeouts)
 	r, err := d.fs.asd.Operate(mrt.Write(), parentKey, aerospike.MapGetByKeyOp("Ls", req.Name, aerospike.MapReturnType.VALUE))
 	if err != nil {
 		mrt.Abort()
