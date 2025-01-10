@@ -169,18 +169,29 @@ func (d *Dir) remove(ctx context.Context, req *fuse.RemoveRequest, mrt *MRT) err
 		log.Error("Parent %d Remove '%s': %s", d.inode, req.Name, err)
 		return syscall.EFAULT
 	}
-	// delete the record in question
+	// key of the file itself
 	kk, err := aerospike.NewKey(d.fs.cfg.Aerospike.Namespace, "fs", int(inode))
 	if err != nil {
 		log.Error("Remove %s from %d: %s", req.Name, d.inode, err)
 		mrt.Abort()
 		return syscall.EFAULT
 	}
-	_, err = d.fs.asd.Delete(mrt.Write(), kk)
+
+	// decrease the Nlink
+	r, err := d.fs.asd.Operate(mrt.Write(), kk, aerospike.AddOp(aerospike.NewBin("Nlink", -1)), aerospike.GetBinOp("Nlink"))
 	if err != nil {
-		log.Error("Remove %s from %d: %s", req.Name, d.inode, err)
 		mrt.Abort()
+		log.Error("Remove %s from %d: %s", req.Name, d.inode, err)
 		return syscall.EFAULT
+	}
+	// delete the record in question only if Nlink is 0
+	if r.Bins["Nlink"].(int) == 0 {
+		_, err = d.fs.asd.Delete(mrt.Write(), kk)
+		if err != nil {
+			log.Error("Remove %s from %d: %s", req.Name, d.inode, err)
+			mrt.Abort()
+			return syscall.EFAULT
+		}
 	}
 	// done
 	xerr := mrt.Commit()
@@ -363,4 +374,58 @@ func (d *Dir) readDirAll(ctx context.Context, rp *aerospike.BasePolicy) ([]fuse.
 		})
 	}
 	return ret, nil
+}
+
+func (d *Dir) Link(ctx context.Context, req *fuse.LinkRequest, old fs.Node) (fs.Node, error) {
+	newName := req.NewName
+	destDirInode := d.inode
+	attr := &fuse.Attr{}
+	err := old.Attr(ctx, attr)
+	if err != nil {
+		return nil, err
+	}
+	sourceFile := attr.Inode
+	log.Detail("Executing Link %d -> %d/%s", sourceFile, destDirInode, newName)
+	// aerospike key
+	kSrc, err := aerospike.NewKey(d.fs.cfg.Aerospike.Namespace, "fs", int(sourceFile))
+	if err != nil {
+		log.Error("Link %d NewKey: %s", d.inode, err)
+		return nil, syscall.EFAULT
+	}
+	kDst, err := aerospike.NewKey(d.fs.cfg.Aerospike.Namespace, "fs", int(destDirInode))
+	if err != nil {
+		log.Error("Link %d NewKey: %s", d.inode, err)
+		return nil, syscall.EFAULT
+	}
+	// update link count Nlink
+	mrt := GetPolicies(d.fs.asd, &d.fs.cfg.Aerospike.Timeouts)
+	_, err = d.fs.asd.Operate(mrt.Write(), kSrc, aerospike.AddOp(aerospike.NewBin("Nlink", 1)))
+	if err != nil {
+		mrt.Abort()
+		log.Error("Link %d Incr(Nlink): %s", d.inode, err)
+		return nil, syscall.EFAULT
+	}
+	// update dir entry
+	mp := aerospike.NewMapPolicy(aerospike.MapOrder.KEY_ORDERED, aerospike.MapWriteMode.CREATE_ONLY)
+	lsVal := &LsItem{
+		Inode: uint64(sourceFile),
+		Type:  fuse.DT_File,
+	}
+	_, err = d.fs.asd.Operate(mrt.Write(), kDst, aerospike.MapPutOp(mp, "Ls", newName, lsVal.ToAerospikeMap()), aerospike.PutOp(aerospike.NewBin("Mtime", TimeToDB(time.Now()))), aerospike.PutOp(aerospike.NewBin("Atime", TimeToDB(time.Now()))))
+	if err != nil {
+		mrt.Abort()
+		log.Error("Link %d Ls: %s", d.inode, err)
+		return nil, syscall.EFAULT
+	}
+	// done
+	xerr := mrt.Commit()
+	if xerr != nil {
+		mrt.Abort()
+		log.Error("Link %d Ls: %s", d.inode, xerr)
+		return nil, syscall.EFAULT
+	}
+	return &File{
+		fs:    d.fs,
+		inode: sourceFile,
+	}, nil
 }
