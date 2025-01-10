@@ -242,13 +242,13 @@ func (d *Dir) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fs.Nod
 		return syscall.EEXIST
 	}
 	// if it's a file and new(exists and dir), error
-	if otype == fuse.DT_File && ninode != 0 && ntype == fuse.DT_Dir {
+	if (otype == fuse.DT_File || otype == fuse.DT_Link) && ninode != 0 && ntype == fuse.DT_Dir {
 		mrt.Abort()
 		log.Detail("Rename %s->%s on %d->%d: src=file dst=EEXXIST+DT_DIR", req.OldName, req.NewName, d.inode, req.NewDir)
 		return syscall.EEXIST
 	}
 	// if it's a file and new(exists, file), delete the new - it is getting overwritten
-	if otype == fuse.DT_File && ninode != 0 && ntype == fuse.DT_File {
+	if (otype == fuse.DT_File || otype == fuse.DT_Link) && ninode != 0 && (ntype == fuse.DT_File || ntype == fuse.DT_Link) {
 		err = nd.remove(ctx, &fuse.RemoveRequest{
 			Name: req.NewName,
 		}, mrt)
@@ -314,6 +314,12 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 	case fuse.DT_File:
 		log.Detail("Lookup: Inode %d name %s: File inode %d", d.inode, name, inode)
 		return &File{
+			fs:    d.fs,
+			inode: inode,
+		}, nil
+	case fuse.DT_Link:
+		log.Detail("Lookup: Inode %d name %s: Symlink inode %d", d.inode, name, inode)
+		return &Symlink{
 			fs:    d.fs,
 			inode: inode,
 		}, nil

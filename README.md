@@ -62,7 +62,6 @@ mount -t asdfs /etc/asdfs.yaml /test
 
 ## TODO
 
-* support symlinks
 * background the mount command instead of it running in the foreground - why are we not returning
 * handle graceful exit via umount, sigterm, sigint
 * enable MRTs in asd.go: var MRTEnabled = true

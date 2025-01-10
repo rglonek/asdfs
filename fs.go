@@ -35,6 +35,12 @@ type LsItem struct {
 	Type  fuse.DirentType
 }
 
+type Symlink struct {
+	fs    *FS
+	inode uint64
+	flags fuse.OpenFlags
+}
+
 func (l *Ls) ToAerospikeMap() map[string]map[string]int {
 	ret := make(map[string]map[string]int)
 	for k, v := range *l {
