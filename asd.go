@@ -2,7 +2,7 @@ package main
 
 import "github.com/aerospike/aerospike-client-go/v8"
 
-var MRTEnabled = false
+var MRTEnabled = true
 
 type MRT struct {
 	txn    *aerospike.Txn

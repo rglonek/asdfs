@@ -62,8 +62,8 @@ mount -t asdfs /etc/asdfs.yaml /test
 
 ## TODO
 
-* background the mount command instead of it running in the foreground - why are we not returning
-* enable MRTs in asd.go: var MRTEnabled = true
+* Wait for bugfix version of the aerospike library comes out with working MRT support
+* Add a github workflow to make linux releases
 
 ## Wishlist
 
