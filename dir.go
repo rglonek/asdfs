@@ -20,6 +20,8 @@ func (d *Dir) Attr(ctx context.Context, a *fuse.Attr) error {
 }
 
 func (d *Dir) Setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse.SetattrResponse) error {
+	OpStart()
+	defer OpEnd()
 	err := d.fs.setattr(ctx, req, resp, d.inode)
 	if err != nil {
 		log.Error("Inode %d SetAttr: %s", d.inode, err)
@@ -29,6 +31,8 @@ func (d *Dir) Setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse.
 }
 
 func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error) {
+	OpStart()
+	defer OpEnd()
 	if d.fs.cfg.MountParams.RO {
 		return nil, syscall.EROFS
 	}
@@ -120,6 +124,8 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 }
 
 func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
+	OpStart()
+	defer OpEnd()
 	if d.fs.cfg.MountParams.RO {
 		return syscall.EROFS
 	}
@@ -212,6 +218,8 @@ func (d *Dir) remove(ctx context.Context, req *fuse.RemoveRequest, mrt *MRT) err
 // from d.inode(Ls) remove req.OldName
 // add req.NewName to req.NewDir(Ls)
 func (d *Dir) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fs.Node) error {
+	OpStart()
+	defer OpEnd()
 	if d.fs.cfg.MountParams.RO {
 		return syscall.EROFS
 	}
@@ -383,6 +391,8 @@ func (d *Dir) readDirAll(ctx context.Context, rp *aerospike.BasePolicy) ([]fuse.
 }
 
 func (d *Dir) Link(ctx context.Context, req *fuse.LinkRequest, old fs.Node) (fs.Node, error) {
+	OpStart()
+	defer OpEnd()
 	newName := req.NewName
 	destDirInode := d.inode
 	attr := &fuse.Attr{}

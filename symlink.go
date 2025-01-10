@@ -12,6 +12,8 @@ import (
 )
 
 func (d *Dir) Symlink(ctx context.Context, req *fuse.SymlinkRequest) (fs.Node, error) {
+	OpStart()
+	defer OpEnd()
 	log.Debug("Creating symlink: dir=%d, name=%s, target=%s\n", d.inode, req.NewName, req.Target)
 
 	if d.fs.cfg.MountParams.RO {

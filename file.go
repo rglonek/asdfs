@@ -28,6 +28,8 @@ func (f *File) truncate(mrt *MRT) error {
 }
 
 func (f *File) Setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse.SetattrResponse) error {
+	OpStart()
+	defer OpEnd()
 	err := f.fs.setattr(ctx, req, resp, f.inode)
 	if err != nil {
 		log.Error("Inode %d SetAttr: %s", f.inode, err)
@@ -94,6 +96,8 @@ func (f *File) Read(ctx context.Context, req *fuse.ReadRequest, resp *fuse.ReadR
 }
 
 func (f *File) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.WriteResponse) error {
+	OpStart()
+	defer OpEnd()
 	if f.fs.cfg.MountParams.RO {
 		return syscall.EROFS
 	}
@@ -150,6 +154,8 @@ func (f *File) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.Wri
 }
 
 func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.CreateResponse) (fs.Node, fs.Handle, error) {
+	OpStart()
+	defer OpEnd()
 	if d.fs.cfg.MountParams.RO {
 		return nil, nil, syscall.EROFS
 	}
