@@ -44,8 +44,9 @@ type Cfg struct {
 		File   string `yaml:"file"`
 	} `yaml:"log"`
 	MountParams struct {
-		RW bool `yaml:"rw"`
-		RO bool `yaml:"ro"`
+		RW    bool `yaml:"rw"`
+		RO    bool `yaml:"ro"`
+		Debug bool `yaml:"debug"`
 	} `yaml:"mountParams"`
 }
 

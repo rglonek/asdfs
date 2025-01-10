@@ -10,4 +10,5 @@ aerospike:
     login: 60s
 log:
   level: 6 # -1=NO_LOGGING 1=CRITICAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG, 6=DETAIL
-  stderr: true
+  stderr: false
+  kmesg: true
