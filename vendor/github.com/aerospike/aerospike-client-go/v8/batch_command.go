@@ -90,7 +90,7 @@ func (cmd *batchCommand) retryBatch(ifc batcher, cluster *Cluster, deadline time
 
 	cmd.splitRetry = true
 
-	// Run batch requests sequentially in same thread.
+	// Run batch requests sequentially in same goroutine.
 	var ferr Error
 	for _, batchNode := range batchNodes {
 		command := ifc.cloneBatchCommand(batchNode)

@@ -158,23 +158,14 @@ func (rp *recordParser) parseTranDeadline(txn *Txn) {
 	}
 }
 func (rp *recordParser) parseRecord(key *Key, isOperation bool) (*Record, Error) {
-	var bins BinMap
+	if rp.opCount == 0 {
+		// Bin data was not returned.
+		return newRecord(rp.cmd.node, key, nil, rp.generation, rp.expiration), nil
+	}
+
 	receiveOffset := rp.cmd.dataOffset
 
-	// There can be fields in the response (setname etc).
-	// But for now, ignore them. Expose them to the API if needed in the future.
-	if rp.fieldCount > 0 {
-		// Just skip over all the fields
-		for i := 0; i < rp.fieldCount; i++ {
-			fieldSize := int(Buffer.BytesToUint32(rp.cmd.dataBuffer, receiveOffset))
-			receiveOffset += (4 + fieldSize)
-		}
-	}
-
-	if rp.opCount > 0 {
-		bins = make(BinMap, rp.opCount)
-	}
-
+	bins := make(BinMap, rp.opCount)
 	for i := 0; i < rp.opCount; i++ {
 		opSize := int(Buffer.BytesToUint32(rp.cmd.dataBuffer, receiveOffset))
 		particleType := int(rp.cmd.dataBuffer[receiveOffset+5])

@@ -92,6 +92,8 @@ const (
 	_INFO4_MRT_ROLL_FORWARD = (1 << 1)
 	// Roll back MRT.
 	_INFO4_MRT_ROLL_BACK = (1 << 2)
+	// Must be able to lock record in transaction.
+	_INFO4_MRT_ON_LOCKING_ONLY = (1 << 4)
 
 	// Interpret SC_READ bits in info3.
 	//
@@ -2892,6 +2894,7 @@ func (cmd *baseCommand) writeHeaderWrite(policy *WritePolicy, writeAttr, fieldCo
 	generation := uint32(0)
 	readAttr := 0
 	infoAttr := 0
+	txnAttr := 0
 
 	switch policy.RecordExistsAction {
 	case UPDATE:
@@ -2923,6 +2926,10 @@ func (cmd *baseCommand) writeHeaderWrite(policy *WritePolicy, writeAttr, fieldCo
 		writeAttr |= _INFO2_DURABLE_DELETE
 	}
 
+	if policy.OnLockingOnly {
+		txnAttr |= _INFO4_MRT_ON_LOCKING_ONLY
+	}
+
 	// if (policy.Xdr) {
 	// 	readAttr |= _INFO1_XDR;
 	// }
@@ -2932,7 +2939,7 @@ func (cmd *baseCommand) writeHeaderWrite(policy *WritePolicy, writeAttr, fieldCo
 	cmd.dataBuffer[9] = byte(readAttr)
 	cmd.dataBuffer[10] = byte(writeAttr)
 	cmd.dataBuffer[11] = byte(infoAttr)
-	cmd.dataBuffer[12] = 0 // unused
+	cmd.dataBuffer[12] = byte(txnAttr)
 	cmd.dataBuffer[13] = 0 // clear the result code
 	cmd.dataOffset = 14
 	cmd.WriteUint32(generation)
@@ -2954,6 +2961,7 @@ func (cmd *baseCommand) writeHeaderReadWrite(policy *WritePolicy, args *operateA
 	readAttr := args.readAttr
 	writeAttr := args.writeAttr
 	infoAttr := 0
+	txnAttr := 0
 	operationCount := len(args.operations)
 
 	switch policy.RecordExistsAction {
@@ -2986,6 +2994,10 @@ func (cmd *baseCommand) writeHeaderReadWrite(policy *WritePolicy, args *operateA
 		writeAttr |= _INFO2_DURABLE_DELETE
 	}
 
+	if policy.OnLockingOnly {
+		txnAttr |= _INFO4_MRT_ON_LOCKING_ONLY
+	}
+
 	// if (policy.xdr) {
 	// 	readAttr |= _INFO1_XDR;
 	// }
@@ -3013,7 +3025,7 @@ func (cmd *baseCommand) writeHeaderReadWrite(policy *WritePolicy, args *operateA
 	cmd.dataBuffer[9] = byte(readAttr)
 	cmd.dataBuffer[10] = byte(writeAttr)
 	cmd.dataBuffer[11] = byte(infoAttr)
-	cmd.dataBuffer[12] = 0 // unused
+	cmd.dataBuffer[12] = byte(txnAttr)
 	cmd.dataBuffer[13] = 0 // clear the result code
 	cmd.dataOffset = 14
 	cmd.WriteUint32(generation)
@@ -3113,7 +3125,7 @@ func (cmd *baseCommand) writeKeyAttr(
 	cmd.WriteByte(byte(attr.readAttr))
 	cmd.WriteByte(byte(attr.writeAttr))
 	cmd.WriteByte(byte(attr.infoAttr))
-	cmd.WriteByte(0) // unused
+	cmd.WriteByte(byte(attr.txnAttr))
 	cmd.WriteByte(0) // clear the result code
 	cmd.WriteUint32(attr.generation)
 	cmd.WriteUint32(attr.expiration)

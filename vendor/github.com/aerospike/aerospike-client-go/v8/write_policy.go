@@ -74,6 +74,16 @@ type WritePolicy struct {
 	// This prevents deleted records from reappearing after node failures.
 	// Valid for Aerospike Server Enterprise Edition 3.10+ only.
 	DurableDelete bool
+
+	// Execute the write command only if the record is not already locked by this transaction.
+	// If this field is true and the record is already locked by this transaction, the command
+	// will return an error with the [types.MRT_ALREADY_LOCKED] error code.
+	//
+	// This field is useful for safely retrying non-idempotent writes as an alternative to simply
+	// aborting the transaction.
+	//
+	// Default: false
+	OnLockingOnly bool
 }
 
 // NewWritePolicy initializes a new WritePolicy instance with default parameters.

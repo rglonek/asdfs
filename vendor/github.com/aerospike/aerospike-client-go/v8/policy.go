@@ -159,6 +159,8 @@ type BasePolicy struct {
 	// This option will increase cpu and memory usage (for extra compressed buffers),but
 	// decrease the size of data sent over the network.
 	//
+	// Valid for Aerospike Server Enterprise Edition only.
+	//
 	// Default: false
 	UseCompression bool // = false
 

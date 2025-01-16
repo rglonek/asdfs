@@ -115,6 +115,7 @@ func (ba *batchAttr) setRead(rp *BatchPolicy) {
 	case ReadModeSCAllowUnavailable:
 		ba.infoAttr = _INFO3_SC_READ_TYPE | _INFO3_SC_READ_RELAX
 	}
+	ba.txnAttr = 0
 	ba.expiration = uint32(rp.ReadTouchTTLPercent)
 	ba.generation = 0
 	ba.hasWrite = false
@@ -142,6 +143,7 @@ func (ba *batchAttr) setBatchRead(rp *BatchReadPolicy) {
 	case ReadModeSCAllowUnavailable:
 		ba.infoAttr = _INFO3_SC_READ_TYPE | _INFO3_SC_READ_RELAX
 	}
+	ba.txnAttr = 0
 	ba.expiration = uint32(rp.ReadTouchTTLPercent)
 	ba.generation = 0
 	ba.hasWrite = false
@@ -174,6 +176,7 @@ func (ba *batchAttr) setBatchWrite(wp *BatchWritePolicy) {
 	ba.readAttr = 0
 	ba.writeAttr = _INFO2_WRITE | _INFO2_RESPOND_ALL_OPS
 	ba.infoAttr = 0
+	ba.txnAttr = 0
 	ba.expiration = wp.Expiration
 	ba.hasWrite = true
 	ba.sendKey = wp.SendKey
@@ -207,6 +210,10 @@ func (ba *batchAttr) setBatchWrite(wp *BatchWritePolicy) {
 
 	if wp.DurableDelete {
 		ba.writeAttr |= _INFO2_DURABLE_DELETE
+	}
+
+	if wp.OnLockingOnly {
+		ba.txnAttr |= _INFO4_MRT_ON_LOCKING_ONLY
 	}
 
 	if wp.CommitLevel == COMMIT_MASTER {
@@ -251,6 +258,7 @@ func (ba *batchAttr) setBatchUDF(up *BatchUDFPolicy) {
 	ba.readAttr = 0
 	ba.writeAttr = _INFO2_WRITE
 	ba.infoAttr = 0
+	ba.txnAttr = 0
 	ba.expiration = up.Expiration
 	ba.generation = 0
 	ba.hasWrite = true
@@ -258,6 +266,10 @@ func (ba *batchAttr) setBatchUDF(up *BatchUDFPolicy) {
 
 	if up.DurableDelete {
 		ba.writeAttr |= _INFO2_DURABLE_DELETE
+	}
+
+	if up.OnLockingOnly {
+		ba.txnAttr |= _INFO4_MRT_ON_LOCKING_ONLY
 	}
 
 	if up.CommitLevel == COMMIT_MASTER {
@@ -270,6 +282,7 @@ func (ba *batchAttr) setBatchDelete(dp *BatchDeletePolicy) {
 	ba.readAttr = 0
 	ba.writeAttr = _INFO2_WRITE | _INFO2_RESPOND_ALL_OPS | _INFO2_DELETE
 	ba.infoAttr = 0
+	ba.txnAttr = 0
 	ba.expiration = 0
 	ba.hasWrite = true
 	ba.sendKey = dp.SendKey

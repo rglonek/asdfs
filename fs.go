@@ -70,6 +70,12 @@ func (f *FS) Root() (fs.Node, error) {
 }
 
 func (f *FS) attr(ctx context.Context, a *fuse.Attr, inode uint64) error {
+	if a.Inode == 18446744073709551615 && a.Flags == 4294967295 {
+		log.Debug("Attr: special: return inode %d only", inode)
+		a.Inode = inode
+		a.Flags = 0
+		return nil
+	}
 	log.Debug("Getting attr for inode %d", inode)
 	k, err := aerospike.NewKey(f.cfg.Aerospike.Namespace, "fs", int64(inode))
 	if err != nil {

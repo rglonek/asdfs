@@ -3,7 +3,7 @@
 bazil.org/fuse
 bazil.org/fuse/fs
 bazil.org/fuse/fuseutil
-# github.com/aerospike/aerospike-client-go/v8 v8.0.0-beta.2
+# github.com/aerospike/aerospike-client-go/v8 v8.0.0-beta.1.0.20250115115048-80b99769dc7d
 ## explicit; go 1.23
 github.com/aerospike/aerospike-client-go/v8
 github.com/aerospike/aerospike-client-go/v8/internal/atomic
@@ -26,6 +26,9 @@ github.com/aerospike/aerospike-client-go/v8/utils/buffer
 github.com/rglonek/logger
 # github.com/rogpeppe/go-internal v1.13.1
 ## explicit; go 1.22
+# github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad
+## explicit
+github.com/wadey/gocovmerge
 # github.com/yuin/gopher-lua v1.1.1
 ## explicit; go 1.17
 github.com/yuin/gopher-lua
@@ -39,6 +42,9 @@ golang.org/x/sync/semaphore
 # golang.org/x/sys v0.29.0
 ## explicit; go 1.18
 golang.org/x/sys/unix
+# golang.org/x/tools v0.28.0
+## explicit; go 1.22.0
+golang.org/x/tools/cover
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3

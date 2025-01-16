@@ -16,6 +16,7 @@ package aerospike
 
 import (
 	"fmt"
+	"iter"
 	"math/rand"
 	"reflect"
 	"runtime"
@@ -204,6 +205,17 @@ func (rcs *Recordset) sendError(err Error) {
 			rcs.records <- &Result{Err: err}
 		} else {
 			rcs.errors <- err
+		}
+	}
+}
+
+// Records implements an iterator over the Recordset.
+func (rcs *Recordset) Records() iter.Seq2[*Record, Error] {
+	return func(yield func(*Record, Error) bool) {
+		for res := range rcs.records {
+			if !yield(res.Record, res.Err) {
+				return
+			}
 		}
 	}
 }

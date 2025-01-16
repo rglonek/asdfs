@@ -13,6 +13,7 @@ import (
 	"bazil.org/fuse/fs"
 	"github.com/aerospike/aerospike-client-go/v8"
 	"github.com/rglonek/logger"
+	"gopkg.in/yaml.v3"
 )
 
 var log = logger.NewLogger()
@@ -51,6 +52,10 @@ func main() {
 				c.Log.Stderr = true
 			}
 		}
+	}
+
+	if c.MountParams.Debug {
+		yaml.NewEncoder(os.Stderr).Encode(c)
 	}
 
 	if !c.MountParams.Debug && os.Getenv("ASDFS_BG") == "" {

@@ -272,6 +272,12 @@ const (
 	// MRT was already aborted.
 	MRT_ABORTED ResultCode = 125
 
+	// This record has been locked by a previous update in this transaction.
+	MRT_ALREADY_LOCKED ResultCode = 126
+
+	// This transaction has already started. Writing to the same transaction with independent goroutines is unsafe.
+	MRT_MONITOR_EXISTS ResultCode = 127
+
 	// BATCH_DISABLED defines batch functionality has been disabled.
 	BATCH_DISABLED ResultCode = 150
 
@@ -578,6 +584,12 @@ func ResultCodeToString(resultCode ResultCode) string {
 	case MRT_ABORTED:
 		return "MRT was already aborted"
 
+	case MRT_ALREADY_LOCKED:
+		return "This record has been locked by a previous update in this transaction"
+
+	case MRT_MONITOR_EXISTS:
+		return "This transaction has already started. Writing to the same transaction with independent goroutines is unsafe"
+
 	case BATCH_DISABLED:
 		return "Batch functionality has been disabled"
 
@@ -806,6 +818,10 @@ func (rc ResultCode) String() string {
 		return "MRT_COMMITTED"
 	case MRT_ABORTED:
 		return "MRT_ABORTED"
+	case MRT_ALREADY_LOCKED:
+		return "MRT_ALREADY_LOCKED"
+	case MRT_MONITOR_EXISTS:
+		return "MRT_MONITOR_EXISTS"
 	case BATCH_DISABLED:
 		return "BATCH_DISABLED"
 	case BATCH_MAX_REQUESTS_EXCEEDED:

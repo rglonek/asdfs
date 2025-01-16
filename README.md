@@ -62,7 +62,6 @@ mount -t asdfs /etc/asdfs.yaml /test
 
 ## TODO
 
-* Wait for bugfix version of the aerospike library comes out with working MRT support
 * Add a github workflow to make linux releases
 
 ## Wishlist

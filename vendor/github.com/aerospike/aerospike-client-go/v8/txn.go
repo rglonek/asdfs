@@ -15,7 +15,6 @@
 package aerospike
 
 import (
-	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -213,7 +212,7 @@ func (txn *Txn) prepareReadForBatchRecordsIfc(records []BatchRecordIfc) Error {
 // Verify that the MRT state allows future commands.
 func (txn *Txn) VerifyCommand() Error {
 	if txn.state != TxnStateOpen {
-		return newError(types.FAIL_FORBIDDEN, fmt.Sprintf("Command not allowed in current MRT state: %#v", txn.state))
+		return newError(types.COMMON_ERROR, "Issuing commands to this transaction is forbidden because it has been ended by a commit or abort")
 	}
 	return nil
 }

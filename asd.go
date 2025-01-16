@@ -109,3 +109,10 @@ func (m *MRT) Read() *aerospike.BasePolicy {
 func (m *MRT) Write() *aerospike.WritePolicy {
 	return m.write
 }
+
+func (m *MRT) Id() int64 {
+	if m.txn == nil {
+		return -1
+	}
+	return m.txn.Id()
+}

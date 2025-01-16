@@ -210,6 +210,7 @@ func Connect(c *Cfg) (*aerospike.Client, error) {
 	}
 	xerr := mrt.Commit()
 	if xerr != nil {
+		mrt.Abort()
 		return asd, xerr
 	}
 	log.Debug("Filesystem initialization complete")

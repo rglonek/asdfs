@@ -43,6 +43,16 @@ type BatchUDFPolicy struct {
 	// Valid for Aerospike Server Enterprise Edition 3.10+ only.
 	DurableDelete bool
 
+	// Execute the write command only if the record is not already locked by this transaction.
+	// If this field is true and the record is already locked by this transaction, the command
+	// will return an error with the [types.MRT_ALREADY_LOCKED] error code.
+	//
+	// This field is useful for safely retrying non-idempotent writes as an alternative to simply
+	// aborting the transaction.
+	//
+	// Default: false
+	OnLockingOnly bool
+
 	// SendKey determines to whether send user defined key in addition to hash digest on both reads and writes.
 	// If true and the UDF writes a record, the key will be stored with the record on the server.
 	// The default is to not send the user defined key.
