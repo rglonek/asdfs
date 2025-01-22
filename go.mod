@@ -4,7 +4,7 @@ go 1.23.4
 
 require (
 	bazil.org/fuse v0.0.0-20230120002735-62a210ff1fd5
-	github.com/aerospike/aerospike-client-go/v8 v8.0.0-beta.1.0.20250115115048-80b99769dc7d
+	github.com/aerospike/aerospike-client-go/v8 v8.0.0-beta.1.0.20250117150523-a3c8af3c9813
 	github.com/rglonek/logger v0.2.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -16,5 +16,5 @@ require (
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
-	golang.org/x/tools v0.28.0 // indirect
+	golang.org/x/tools v0.29.0 // indirect
 )

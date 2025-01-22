@@ -21,6 +21,13 @@ import "fmt"
 type ResultCode int
 
 const (
+	// Multi-record transaction failed
+	// Multi-record transaction commit called, but the transaction was already aborted.
+	TXN_ALREADY_ABORTED ResultCode = -24
+
+	// Multi-record transaction abort called, but the transaction was already committed.
+	TXN_ALREADY_COMMITTED ResultCode = -23
+
 	// Multi-record transaction failed.
 	TXN_FAILED ResultCode = -22
 
@@ -339,6 +346,13 @@ const (
 // ResultCodeToString returns a human readable errors message based on the result code.
 func ResultCodeToString(resultCode ResultCode) string {
 	switch ResultCode(resultCode) {
+
+	case TXN_ALREADY_ABORTED:
+		return "Multi-record transaction commit called, but the transaction was already aborted"
+
+	case TXN_ALREADY_COMMITTED:
+		return "Multi-record transaction abort called, but the transaction was already committed"
+
 	case TXN_FAILED:
 		return "Multi-record transaction failed"
 
@@ -654,6 +668,10 @@ func ResultCodeToString(resultCode ResultCode) string {
 
 func (rc ResultCode) String() string {
 	switch rc {
+	case TXN_ALREADY_ABORTED:
+		return "TXN_ALREADY_ABORTED"
+	case TXN_ALREADY_COMMITTED:
+		return "TXN_ALREADY_COMMITTED"
 	case TXN_FAILED:
 		return "TXN_FAILED"
 	case GRPC_ERROR:

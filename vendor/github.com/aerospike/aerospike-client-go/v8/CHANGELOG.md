@@ -1,5 +1,19 @@
 # Change History
 
+## January 17 2025: v8.0.0-beta.3
+
+- **New Features**
+  - [CLIENT-3257] Implement iterator support for `Recordset`.
+
+- **Fixes**
+  - [CLIENT-3275] Return an error when MRT commit called, but transaction was already aborted.
+  - [CLIENT-3295] Duplicate parsing of fields in RecordParser.ParseRecord.
+  - [CLIENT-3261] New OnLockingOnly attribute for various write policies to write only if provisional does not exist.
+  - [CLIENT-3227] Clarify that BasePolicy.UseCompression requires Enterprise Edition.
+  - [CLIENT-3260] Add MRT_ALREADY_LOCKED and MRT_MONITOR_EXISTS error codes.
+  - [CLIENT-3292][CLIENT-3293] Update dependencies due to Snyk CVE reports.
+  - [CLIENT-3274] Fix MRT related client exception inconsistency between clients.
+
 ## December 20 2024: v8.0.0-beta.2
 
 - **New Features**

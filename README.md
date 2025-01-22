@@ -62,6 +62,11 @@ mount -t asdfs /etc/asdfs.yaml /test
 
 ## TODO
 
+* we need locking and retires to handle multiple writes to the same directory and file
+* EFAULT->EIO
+* do we need to check permissions against user uid/gid and print EACCES ?
+* MRT blocked->EBUSY
+* EEXIST,ENOTDIR,EISDIR,EFBIG,ENOSPC,ETIMEDOUT,ENOTEMPTY
 * Add a github workflow to make linux releases
 
 ## Wishlist

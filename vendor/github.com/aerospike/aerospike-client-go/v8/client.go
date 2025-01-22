@@ -1474,7 +1474,7 @@ func (clnt *Client) Commit(txn *Txn) (CommitStatus, Error) {
 	case TxnStateCommitted:
 		return CommitStatusAlreadyCommitted, nil
 	case TxnStateAborted:
-		return CommitStatusAlreadyAborted, nil
+		return CommitStatusAlreadyAborted, newError(types.TXN_ALREADY_ABORTED, "Transaction already aborted")
 	}
 }
 
@@ -1491,7 +1491,7 @@ func (clnt *Client) Abort(txn *Txn) (AbortStatus, Error) {
 	case TxnStateVerified:
 		return tr.Abort(&clnt.GetDefaultTxnRollPolicy().BatchPolicy)
 	case TxnStateCommitted:
-		return AbortStatusAlreadyCommitted, nil
+		return AbortStatusAlreadyCommitted, newError(types.TXN_ALREADY_COMMITTED, "Transaction already committed")
 	case TxnStateAborted:
 		return AbortStatusAlreadyAborted, nil
 	}

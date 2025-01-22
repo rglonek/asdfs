@@ -24,32 +24,31 @@ type TxnError struct {
 	CommitError CommitError
 
 	// Verify result for each read key in the MRT. May be nil if failure occurred before verify.
-	VerifyRecords []BatchRecordIfc
+	VerifyRecords []*BatchRecord
 
 	// Roll forward/backward result for each write key in the MRT. May be nil if failure occurred before
 	// roll forward/backward.
-	RollRecords []BatchRecordIfc
+	RollRecords []*BatchRecord
 }
 
 var _ error = &TxnError{}
 var _ Error = &TxnError{}
 
-// func NewTxnCommitError(err CommitError, verifyRecords, rollRecords []BatchRecordIfc, cause Error) Error {
-func NewTxnCommitError(err CommitError, cause Error) Error {
+func NewTxnCommitError(err CommitError, verifyRecords, rollRecords []*BatchRecord, cause Error) Error {
 	if cause == nil {
 		res := newError(types.TXN_FAILED, string(err))
 		return &TxnError{
 			AerospikeError: *(res.(*AerospikeError)),
 			CommitError:    err,
-			// VerifyRecords:  verifyRecords,
-			// RollRecords:    rollRecords,
+			VerifyRecords:  verifyRecords,
+			RollRecords:    rollRecords,
 		}
 	}
 
 	return &TxnError{
 		AerospikeError: *(cause.(*AerospikeError)),
 		CommitError:    err,
-		// VerifyRecords:  verifyRecords,
-		// RollRecords:    rollRecords,
+		VerifyRecords:  verifyRecords,
+		RollRecords:    rollRecords,
 	}
 }

@@ -37,7 +37,7 @@ func (txr *TxnRoll) Verify(verifyPolicy, rollPolicy *BatchPolicy) Error {
 		txr.txn.SetState(TxnStateAborted)
 
 		if err := txr.Roll(rollPolicy, _INFO4_MRT_ROLL_BACK); err != nil {
-			return NewTxnCommitError(CommitErrorVerifyFailAbortAbandoned, err)
+			return NewTxnCommitError(CommitErrorVerifyFailAbortAbandoned, txr.verifyRecords, txr.rollRecords, err)
 
 		}
 
@@ -47,11 +47,11 @@ func (txr *TxnRoll) Verify(verifyPolicy, rollPolicy *BatchPolicy) Error {
 
 			txnKey := getTxnMonitorKey(txr.txn)
 			if err := txr.Close(writePolicy, txnKey); err != nil {
-				return NewTxnCommitError(CommitErrorVerifyFailAbortAbandoned, err)
+				return NewTxnCommitError(CommitErrorVerifyFailAbortAbandoned, txr.verifyRecords, txr.rollRecords, err)
 			}
 		}
 
-		return NewTxnCommitError(CommitErrorVerifyFail, err)
+		return NewTxnCommitError(CommitErrorVerifyFail, txr.verifyRecords, txr.rollRecords, err)
 	}
 	txr.txn.SetState(TxnStateVerified)
 	return nil
@@ -65,7 +65,7 @@ func (txr *TxnRoll) Commit(rollPolicy *BatchPolicy) (CommitStatus, Error) {
 
 	if txr.txn.MonitorExists() {
 		if err := txr.MarkRollForward(writePolicy, txnKey); err != nil {
-			aec := NewTxnCommitError(CommitErrorVerifyFailAbortAbandoned, err)
+			aec := NewTxnCommitError(CommitErrorVerifyFailAbortAbandoned, txr.verifyRecords, txr.rollRecords, err)
 
 			if err.resultCode() == types.MRT_ABORTED {
 				aec.markInDoubt(false)
